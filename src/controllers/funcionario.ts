@@ -197,7 +197,7 @@ export default {
         }
       );
 
-      return response.status(200).json({ token });
+      return response.status(200).json(token);
     } catch (e) {
       return handleErrors(e, response);
     }
