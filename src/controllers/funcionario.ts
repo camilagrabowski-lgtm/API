@@ -63,10 +63,10 @@ export default {
         nome,
         cpf,
         email,
-        telefone,
+        telefone ,
         senha,
         endereco,
-        nascimento,
+        nascimento, 
         cargo,
       } = request.body;
 
