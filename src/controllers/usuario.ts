@@ -1,63 +1,44 @@
-import { Request, Response} from "express";
-import { prisma } from "../../config/prisma";
-import { handleErrors } from "../helpers/handleErrors";
+
+import { Request, Response } from "express";
+import { prisma } from "../config/prisma.ts";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export default {
-  create: async (request: Request, response: Response) => {
+  login: async (request: Request, response: Response) => {
     try {
-      const { id } = request.params;
-      const { cursosIds } = request.body;
-      if (!cursosIds || !Array.isArray(cursosIds)) {
-        return response.status(400).json("Cursos inválidos");
-      }
-      const aluno = await prisma.aluno.update({
-        where: {
-          id: +id,
-        },
-        data: {
-          cursos: {
-            connect: cursosIds.map((cursoId: number) => ({ id: cursoId })),
-          },
-        },
+      const { email, senha } = request.body;
 
-        include: {
-          cursos: true,
-        },
+      if (!email || !senha) {
+        return response.status(400).json({
+          mensagem: "Informe o email e a senha.",
+        });
+      }
+
+      const usuario = await prisma.usuario.findUnique({
+        where: { email },
       });
 
-      return response.status(200).json(aluno);
-    } catch (e) {
-      return handleErrors(e, response);
+      if (!usuario || !bcrypt.compareSync(senha, usuario.senha)) {
+        return response.status(401).json({
+          mensagem: "Email ou senha inválidos.",
+        });
+      }
+
+      const token = jwt.sign(
+        { id: usuario.id },
+        process.env.JWT_SECRET as string,
+        { expiresIn: "1d" }
+      );
+
+      return response.status(200).json({
+        mensagem: "Login realizado com sucesso!",
+        token,
+      });
+    } catch (error) {
+      return response.status(500).json({
+        mensagem: "Erro ao realizar login.",
+      });
     }
   },
-
-  delete: async (request: Request, response: Response) => {
-    try {
-      const { id } = request.params;
-      const { cursosIds } = request.body;
-
-      if(!cursosIds  || !Array.isArray(cursosIds)) {
-        return response.status(400).json("Cursos inválidos");
-      }
-
-      const aluno = await prisma.aluno.update({
-        where: {
-          id: +id,
-        },
-        data: {
-          cursos: {
-            disconnect: cursosIds.map((cursoId: number) => ({ id: cursoId })),
-          },
-        },
-        include: {
-          cursos: true,
-        },
-      });
-
-      return response.status(200).json(aluno);
-    } catch (e) {
-      return handleErrors(e, response);
-    }
-
-  }
 };

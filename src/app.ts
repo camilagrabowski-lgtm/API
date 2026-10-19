@@ -1,16 +1,15 @@
-import espress from "express";
-import cors from "cors";
+
+import "dotenv/config";
+import express from "express";
 import routes from "./routes";
 
-// Inicializa o express
-const app = espress();
+const app = express();
 
-// Define as regras do servidor
-app.use(espress.json());
-app.use(espress.urlencoded({ extended: true }));
-app.use(cors());
-
-// Define as rotas do servidor
+app.use(express.json());
 app.use(routes);
 
-export default app;
+const PORT = Number(process.env.PORT) || 3000;
+
+app.listen(PORT, () => {
+  console.log(`API do Naruto rodando na porta ${PORT}!`);
+});

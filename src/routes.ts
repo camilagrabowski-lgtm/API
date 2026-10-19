@@ -1,8 +1,8 @@
 
 import { Router } from "express";
 
-import personagemController from "./controllers/personagem";
 import usuarioController from "./controllers/usuario";
+import personagemController from "./controllers/personagem";
 import { authentication } from "./middlewares/authentication";
 
 const routes = Router();
@@ -14,13 +14,14 @@ routes.get("/", (request, response) => {
   });
 });
 
-// Rota de login
+// Login
 routes.post("/login", usuarioController.login);
 
-// ROTAS DE PERSONAGENS
+// Rotas públicas de personagens
 routes.get("/personagens", personagemController.list);
 routes.get("/personagens/:id", personagemController.getById);
 
+// Rotas protegidas por JWT
 routes.post(
   "/personagens",
   authentication,

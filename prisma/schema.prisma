@@ -15,10 +15,10 @@ model Usuario {
 }
 
 model Personagem {
-  id          Int    @id @default(autoincrement())
-  nome        String
-  aldeia      String
-  cla         String
-  classificacao String
-  chakra      String
+  id         Int     @id @default(autoincrement())
+  nome       String
+  aldeia     String
+  cla        String?
+  habilidade String
+  bijuu      String?
 }

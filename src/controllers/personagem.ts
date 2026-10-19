@@ -1,205 +1,141 @@
 
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { prisma } from "../../config/prisma";
-import { handleErrors } from "../helpers/handleErrors";
+import { prisma } from "../config/prisma";
 
 export default {
+  // Listar todos os personagens
   list: async (request: Request, response: Response) => {
     try {
-      const funcionarios = await prisma.funcionario.findMany({
-        select: {
-          id: true,
-          nome: true,
-          cpf: true,
-          email: true,
-          telefone: true,
-          endereco: true,
-          nascimento: true,
-          cargo: true,
-        },
-      });
+      const personagens = await prisma.personagem.findMany();
 
-      return response.status(200).json(funcionarios);
-    } catch (e) {
-      return handleErrors(e, response);
+      return response.status(200).json(personagens);
+    } catch {
+      return response.status(500).json({
+        mensagem: "Erro ao listar personagens.",
+      });
     }
   },
 
+  // Buscar um personagem pelo ID
   getById: async (request: Request, response: Response) => {
     try {
-      const { id } = request.params;
+      const id = Number(request.params.id);
 
-      const funcionario = await prisma.funcionario.findUnique({
-        where: { id: +id },
-        select: {
-          id: true,
-          nome: true,
-          cpf: true,
-          email: true,
-          telefone: true,
-          endereco: true,
-          nascimento: true,
-          cargo: true,
-        },
-      });
-
-      if (!funcionario) {
-        return response.status(404).json({
-          message: "Funcionário não encontrado",
+      if (!Number.isInteger(id) || id <= 0) {
+        return response.status(400).json({
+          mensagem: "ID inválido.",
         });
       }
 
-      return response.status(200).json(funcionario);
-    } catch (e) {
-      return handleErrors(e, response);
+      const personagem = await prisma.personagem.findUnique({
+        where: { id },
+      });
+
+      if (!personagem) {
+        return response.status(404).json({
+          mensagem: "Personagem não encontrado.",
+        });
+      }
+
+      return response.status(200).json(personagem);
+    } catch {
+      return response.status(500).json({
+        mensagem: "Erro ao buscar personagem.",
+      });
     }
   },
 
+  // Criar um personagem
   create: async (request: Request, response: Response) => {
     try {
-      const {
-        nome,
-        cpf,
-        email,
-        telefone ,
-        senha,
-        endereco,
-        nascimento, 
-        cargo,
-      } = request.body;
+      const { nome, aldeia, cla, habilidade, bijuu } = request.body;
 
-      const senhaHash = await bcrypt.hash(senha, 10);
+      if (!nome || !aldeia || !habilidade) {
+        return response.status(400).json({
+          mensagem: "Nome, aldeia e habilidade são obrigatórios.",
+        });
+      }
 
-      const funcionario = await prisma.funcionario.create({
-        data: {
-          nome,
-          cpf,
-          email,
-          telefone: telefone ? Number(telefone) : null,
-          senha: senhaHash,
-          endereco,
-          nascimento: nascimento ? new Date(nascimento) : null,
-          cargo,
-        },
-        select: {
-          id: true,
-          nome: true,
-          cpf: true,
-          email: true,
-          telefone: true,
-          endereco: true,
-          nascimento: true,
-          cargo: true,
-        },
+      const personagem = await prisma.personagem.create({
+        data: { nome, aldeia, cla, habilidade, bijuu },
       });
 
-      return response.status(201).json(funcionario);
-    } catch (e) {
-      return handleErrors(e, response);
+      return response.status(201).json(personagem);
+    } catch {
+      return response.status(500).json({
+        mensagem: "Erro ao criar personagem.",
+      });
     }
   },
 
+  // Atualizar um personagem
   update: async (request: Request, response: Response) => {
     try {
-      const { id } = request.params;
-      const {
-        nome,
-        cpf,
-        email,
-        telefone,
-        senha,
-        endereco,
-        nascimento,
-        cargo,
-      } = request.body;
+      const id = Number(request.params.id);
 
-      const funcionario = await prisma.funcionario.update({
-        where: { id: +id },
-        data: {
-          nome,
-          cpf,
-          email,
-          telefone: telefone !== undefined
-            ? (telefone ? Number(telefone) : null)
-            : undefined,
-          senha: senha ? await bcrypt.hash(senha, 10) : undefined,
-          endereco,
-          nascimento: nascimento !== undefined
-            ? (nascimento ? new Date(nascimento) : null)
-            : undefined,
-          cargo,
-        },
-        select: {
-          id: true,
-          nome: true,
-          cpf: true,
-          email: true,
-          telefone: true,
-          endereco: true,
-          nascimento: true,
-          cargo: true,
-        },
+      if (!Number.isInteger(id) || id <= 0) {
+        return response.status(400).json({
+          mensagem: "ID inválido.",
+        });
+      }
+
+      const { nome, aldeia, cla, habilidade, bijuu } = request.body;
+
+      const existente = await prisma.personagem.findUnique({
+        where: { id },
       });
 
-      return response.status(200).json(funcionario);
-    } catch (e) {
-      return handleErrors(e, response);
+      if (!existente) {
+        return response.status(404).json({
+          mensagem: "Personagem não encontrado.",
+        });
+      }
+
+      const personagem = await prisma.personagem.update({
+        where: { id },
+        data: { nome, aldeia, cla, habilidade, bijuu },
+      });
+
+      return response.status(200).json(personagem);
+    } catch {
+      return response.status(500).json({
+        mensagem: "Erro ao atualizar personagem.",
+      });
     }
   },
 
+  // Excluir um personagem
   delete: async (request: Request, response: Response) => {
     try {
-      const { id } = request.params;
+      const id = Number(request.params.id);
 
-      await prisma.funcionario.delete({
-        where: { id: +id },
+      if (!Number.isInteger(id) || id <= 0) {
+        return response.status(400).json({
+          mensagem: "ID inválido.",
+        });
+      }
+
+      const personagem = await prisma.personagem.findUnique({
+        where: { id },
+      });
+
+      if (!personagem) {
+        return response.status(404).json({
+          mensagem: "Personagem não encontrado.",
+        });
+      }
+
+      await prisma.personagem.delete({
+        where: { id },
       });
 
       return response.status(200).json({
-        message: "Funcionário excluído com sucesso",
+        mensagem: "Personagem excluído com sucesso!",
       });
-    } catch (e) {
-      return handleErrors(e, response);
-    }
-  },
-
-  login: async (request: Request, response: Response) => {
-    try {
-      const { email, senha } = request.body;
-
-      if (!email || !senha) {
-        return response.status(400).json("Dados incompletos");
-      }
-
-      const funcionario = await prisma.funcionario.findUnique({
-        where: {
-          email,
-        },
+    } catch {
+      return response.status(500).json({
+        mensagem: "Erro ao excluir personagem.",
       });
-
-      if (
-        !funcionario ||
-        !bcrypt.compareSync(senha, funcionario.senha)
-      ) {
-        return response.status(401).json("Email e/ou senha inválidos");
-      }
-
-      const token = jwt.sign(
-        {
-          id: funcionario.id,
-          cargo: funcionario.cargo,
-        },
-        process.env.JWT_SECRET!,
-        {
-          expiresIn: "1d",
-        }
-      );
-
-      return response.status(200).json(token);
-    } catch (e) {
-      return handleErrors(e, response);
     }
   },
 };

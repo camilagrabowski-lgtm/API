@@ -1,34 +1,34 @@
+
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken"; 
+import jwt from "jsonwebtoken";
 
 export function authentication(
-    request: Request,
-    response: Response, 
-    next: NextFunction
+  request: Request,
+  response: Response,
+  next: NextFunction
 ) {
-    try {
-      const autHeader = request.headers.authorization;
+  const authorization = request.headers.authorization;
 
-      if (!autHeader) {
-        return response.status(401).json("Não autenticado");
-      }
+  if (!authorization) {
+    return response.status(401).json({
+      mensagem: "Token não informado.",
+    });
+  }
 
-      const [bearer, token] = autHeader.split(" ");
+  const [tipo, token] = authorization.split(" ");
 
-      if(bearer !== "Bearer" || !token) {
-        return response.status(401).json("Não autenticado");
-      }
+  if (tipo !== "Bearer" || !token) {
+    return response.status(401).json({
+      mensagem: "Formato do token inválido.",
+    });
+  }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-
-      if (!request.body) {
-        request.body = {};
-      }
-      request.body.user = decoded as { id: number; cargo: string };
-
-      next();
-    } catch (e) {
-      console.error(e);
-      return response.status(401).json("Não autenticado");
-    }
+  try {
+    jwt.verify(token, process.env.JWT_SECRET as string);
+    return next();
+  } catch {
+    return response.status(401).json({
+      mensagem: "Token inválido ou expirado.",
+    });
+  }
 }
